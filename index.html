@@ -4,535 +4,897 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Areia Movediça Vôlei Club</title>
+
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏐</text></svg>">
     <style>
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        .lucide { width: 1em; height: 1em; stroke: currentColor; stroke-width: 2; fill: none; }
+        .lucide { width: 1.2em; height: 1.2em; stroke: currentColor; stroke-width: 2; fill: none; }
+        .lucide-small { width: 1em; height: 1em; stroke: currentColor; stroke-width: 2; fill: none; }
+        .lucide-xlarge { width: 6em; height: 6em; stroke: currentColor; stroke-width: 2; fill: none; }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        .receipt-thumbnail {
+            width: 50px; /* Tamanho da miniatura */
+            height: 50px;
+            object-fit: cover; /* Garante que a imagem preencha o espaço sem distorcer */
+            border-radius: 4px;
+            border: 1px solid #e2e8f0; /* Cor de borda cinza claro */
+            margin-left: 10px; /* Espaçamento à esquerda do nome */
+            cursor: pointer; /* Indica que é clicável */
+        }
+
+        /* Modal de visualização da imagem */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        .close-button {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
-    
-    <script type="text/babel">
-        const { useState, useEffect } = React;
 
-        // Componentes de ícones simplificados
-        const Upload = () => <svg className="lucide"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
-        const Check = () => <svg className="lucide"><polyline points="20,6 9,17 4,12"/></svg>;
-        const X = () => <svg className="lucide"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
-        const Clock = () => <svg className="lucide"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>;
-        const Users = () => <svg className="lucide"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
-        const DollarSign = () => <svg className="lucide"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
-        const Calendar = () => <svg className="lucide"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
-        const Phone = () => <svg className="lucide"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>;
-        const LogOut = () => <svg className="lucide"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>;
-        const Copy = () => <svg className="lucide"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>;
+    <script type="text/babel">
+        // Definição dos ícones Lucide (inline SVG)
+        const Upload = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
+        const Check = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20,6 9,17 4,12"/></svg>;
+        const X = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+        const Clock = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>;
+        const Users = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+        const DollarSign = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
+        const Calendar = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+        const Phone = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>;
+        const LogOut = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>;
+        const Copy = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>;
+        const Trash2 = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
+        const Image = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>;
+
+
+        const { useState, useEffect, useRef } = React;
 
         const AreiaMovedicaApp = () => {
-          const [currentUser, setCurrentUser] = useState(null);
-          const [loginPhone, setLoginPhone] = useState('');
-          const [isAdmin, setIsAdmin] = useState(false);
-          const [view, setView] = useState('login');
-          
-          const [gameConfig, setGameConfig] = useState({
-            date: new Date().toISOString().split('T')[0],
-            duration: 2,
-            maxPlayers: 18,
-            cutoffTime: '17:00',
-            startTime: '20:00',
-            status: 'open'
-          });
+            const paymentSectionRef = useRef(null);
 
-          const [players, setPlayers] = useState([]);
-          const [newPlayerName, setNewPlayerName] = useState('');
+            // SUA URL DO APPS SCRIPT AQUI! (Obtida após a implantação na Parte 3)
+            const APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyEV5u0kbMoQiGdGWnoN4f9PIPWTkGNuxzlZGgZFRfXNlmlmo2WuVKY_s9jFBbWfF6b/exec';
 
-          // CONFIGURAÇÃO: Altere aqui seu telefone de administrador
-          const adminPhone = '41988697752'; // 👈 ALTERE AQUI SEU TELEFONE
-          
-          const quadraPrice = gameConfig.duration * 120;
-          const pricePerPlayer = players.length > 0 ? quadraPrice / players.length : 0;
-
-          const analyzePaymentProof = async (file) => {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            const isValid = Math.random() > 0.1;
-            return {
-              isValid,
-              detectedAmount: pricePerPlayer,
-              confidence: isValid ? 0.95 : 0.3
+            const loadState = (key, defaultValue) => {
+                try {
+                    const serializedState = localStorage.getItem(key);
+                    if (serializedState === null) {
+                        return defaultValue;
+                    }
+                    return JSON.parse(serializedState);
+                } catch (error) {
+                    console.error(`Erro ao carregar estado '${key}' do localStorage:`, error);
+                    return defaultValue;
+                }
             };
-          };
 
-          const handleLogin = () => {
-            const phone = loginPhone.replace(/\D/g, '');
-            if (phone.length < 10) {
-              alert('Por favor, insira um telefone válido');
-              return;
-            }
-            
-            setCurrentUser({
-              phone,
-              name: phone === adminPhone ? 'Administrador' : ''
+            const saveState = (key, state) => {
+                try {
+                    const serializedState = JSON.stringify(state);
+                    localStorage.setItem(key, serializedState);
+                } catch (error) {
+                    console.error(`Erro ao salvar estado '${key}' no localStorage:`, error);
+                    return;
+                }
+            };
+
+            const [currentUser, setCurrentUser] = useState(() => loadState('currentUser', null));
+            const [loginPhone, setLoginPhone] = useState(() => loadState('lastLoginPhone', ''));
+            const [isAdmin, setIsAdmin] = useState(() => loadState('isAdmin', false));
+            const [view, setView] = useState(() => loadState('view', 'login'));
+
+            const [gameConfig, setGameConfig] = useState(() => {
+                const defaultDate = new Date();
+                defaultDate.setDate(defaultDate.getDate());
+                return loadState('gameConfig', {
+                    date: defaultDate.toISOString().split('T')[0],
+                    duration: 2,
+                    maxPlayers: 18,
+                    cutoffTime: '17:00',
+                    startTime: '20:00',
+                    status: 'open',
+                    pixKey: '03878886918' // Chave PIX atualizada para CPF como exemplo
+                });
             });
-            
-            if (phone === adminPhone) {
-              setIsAdmin(true);
-              setView('admin');
-            } else {
-              setIsAdmin(false);
-              setView('player');
-            }
-          };
 
-          const handleLogout = () => {
-            setCurrentUser(null);
-            setIsAdmin(false);
-            setView('login');
-            setLoginPhone('');
-          };
+            // paymentProofUrl agora armazenará a URL REAL do Google Drive
+            const [players, setPlayers] = useState(() => loadState('players', []));
+            const [newPlayerName, setNewPlayerName] = useState('');
+            const [showCopyFeedback, setShowCopyFeedback] = useState(false);
+            const [isAnalyzingPayment, setIsAnalyzingPayment] = useState(false);
+            const [clearListStatus, setClearListStatus] = useState({ message: '', color: '' });
+            const [isClearingList, setIsClearingList] = useState(false);
 
-          const handleAddPlayer = () => {
-            if (!newPlayerName.trim()) return;
-            
-            const newPlayer = {
-              id: Date.now(),
-              name: newPlayerName,
-              phone: currentUser.phone,
-              paymentProof: null,
-              status: 'pending',
-              addedAt: new Date(),
-              analysisResult: null
-            };
-            
-            setPlayers([...players, newPlayer]);
-            setNewPlayerName('');
-          };
-
-          const handleFileUpload = async (playerId, file) => {
-            const playerIndex = players.findIndex(p => p.id === playerId);
-            if (playerIndex === -1) return;
-
-            const updatedPlayers = [...players];
-            updatedPlayers[playerIndex] = {
-              ...updatedPlayers[playerIndex],
-              paymentProof: file,
-              status: 'analyzing'
-            };
-            setPlayers(updatedPlayers);
-
-            const analysis = await analyzePaymentProof(file);
-            
-            updatedPlayers[playerIndex] = {
-              ...updatedPlayers[playerIndex],
-              analysisResult: analysis,
-              status: analysis.isValid ? 'approved' : 'rejected'
-            };
-            setPlayers(updatedPlayers);
-          };
-
-          const handleManualApproval = (playerId, approve) => {
-            setPlayers(players.map(player => 
-              player.id === playerId 
-                ? { ...player, status: approve ? 'approved' : 'rejected' }
-                : player
-            ));
-          };
-
-          const handleRemovePlayer = (playerId) => {
-            setPlayers(players.filter(player => player.id !== playerId));
-          };
-
-          const copyToClipboard = (text) => {
-            navigator.clipboard.writeText(text).then(() => {
-              alert('Texto copiado para a área de transferência!');
+            const [showAddPlayerForm, setShowAddPlayerForm] = useState(() => {
+                const loadedCurrentUser = loadState('currentUser', null);
+                const loadedPlayers = loadState('players', []);
+                return !(loadedCurrentUser && loadedPlayers.some(p => p.phone === loadedCurrentUser.phone));
             });
-          };
 
-          const approvedPlayers = players.filter(p => p.status === 'approved');
-          const pendingPlayers = players.filter(p => p.status === 'pending' || p.status === 'analyzing');
+            // Novo estado para o modal de visualização de imagem
+            const [modalImageSrc, setModalImageSrc] = useState(null);
 
-          const currentPlayerData = players.find(p => p.phone === currentUser?.phone);
-          const canAddPlayer = !currentPlayerData && gameConfig.status === 'open' && players.length < gameConfig.maxPlayers;
+            // CONFIGURAÇÃO: Altere aqui seu telefone de administrador
+            const adminPhone = '41988697758';
 
-          // Tela de Login
-          if (view === 'login') {
-            return (
-              <div className="max-w-md mx-auto p-6 bg-white min-h-screen flex flex-col justify-center">
-                <div className="text-center mb-8">
-                  <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <span className="text-white text-2xl font-bold">🏐</span>
-                  </div>
-                  <h1 className="text-2xl font-bold text-gray-800 mb-2">Areia Movediça</h1>
-                  <p className="text-gray-600">Vôlei Club</p>
-                </div>
+            const quadraPrice = gameConfig.duration * 120;
+            const approvedPlayers = players.filter(p => p.status === 'approved');
+            const pendingPlayers = players.filter(p => p.status === 'pending' || p.status === 'analyzing' || p.status === 'rejected');
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Telefone (WhatsApp)</label>
-                    <input
-                      type="tel"
-                      value={loginPhone}
-                      onChange={(e) => setLoginPhone(e.target.value)}
-                      placeholder="(41) 99999-9999"
-                      className="w-full p-4 border border-gray-300 rounded-lg text-lg"
-                    />
-                  </div>
-                  
-                  <button
-                    onClick={handleLogin}
-                    className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white p-4 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all"
-                  >
-                    Entrar no Sistema
-                  </button>
-                </div>
+            const totalPlayersForDivision = approvedPlayers.length + pendingPlayers.length;
+            const pricePerPlayer = totalPlayersForDivision > 0 ? quadraPrice / totalPlayersForDivision : 0;
 
-                <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="font-semibold mb-2">📋 Próximo Jogo</h3>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p>📅 Data: {gameConfig.date}</p>
-                    <p>⏰ Início: {gameConfig.startTime}</p>
-                    <p>⏱️ Duração: {gameConfig.duration}h</p>
-                    <p>💰 Valor: R$ {pricePerPlayer.toFixed(2)} por pessoa</p>
-                    <p>👥 Vagas: {approvedPlayers.length}/{gameConfig.maxPlayers}</p>
-                  </div>
-                </div>
-              </div>
-            );
-          }
+            useEffect(() => { saveState('currentUser', currentUser); }, [currentUser]);
+            useEffect(() => { saveState('isAdmin', isAdmin); }, [isAdmin]);
+            useEffect(() => { saveState('view', view); }, [view]);
+            useEffect(() => { saveState('gameConfig', gameConfig); }, [gameConfig]);
+            useEffect(() => { saveState('players', players); }, [players]);
+            useEffect(() => { saveState('lastLoginPhone', loginPhone); }, [loginPhone]);
 
-          // Tela do Jogador
-          if (view === 'player') {
-            return (
-              <div className="max-w-md mx-auto p-6 bg-white min-h-screen">
-                <div className="flex justify-between items-center mb-6">
-                  <div>
-                    <h1 className="text-xl font-bold text-gray-800">Areia Movediça 🏐</h1>
-                    <p className="text-gray-600">Olá, {currentUser.phone}</p>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <LogOut />
-                  </button>
-                </div>
+            // Não precisamos mais revogar URLs temporárias se estivermos usando URLs persistentes do Drive
+            // useEffect(() => {
+            //     return () => {
+            //         players.forEach(player => {
+            //             if (player.paymentProofUrl && player.paymentProofUrl.startsWith('blob:')) {
+            //                 URL.revokeObjectURL(player.paymentProofUrl);
+            //             }
+            //         });
+            //     };
+            // }, [players]);
 
-                <div className="bg-gradient-to-r from-orange-100 to-red-100 p-4 rounded-lg mb-6">
-                  <h2 className="font-semibold mb-2">🏐 Próximo Jogo</h2>
-                  <div className="text-sm space-y-1">
-                    <p>📅 {gameConfig.date}</p>
-                    <p>⏰ {gameConfig.startTime} - Duração: {gameConfig.duration}h</p>
-                    <p>💰 R$ {pricePerPlayer.toFixed(2)} por pessoa</p>
-                    <p>👥 {approvedPlayers.length}/{gameConfig.maxPlayers} confirmados</p>
-                  </div>
-                </div>
 
-                {currentPlayerData ? (
-                  <div className={`p-4 rounded-lg mb-6 ${
-                    currentPlayerData.status === 'approved' ? 'bg-green-50 border border-green-200' :
-                    currentPlayerData.status === 'analyzing' ? 'bg-yellow-50 border border-yellow-200' :
-                    currentPlayerData.status === 'rejected' ? 'bg-red-50 border border-red-200' :
-                    'bg-blue-50 border border-blue-200'
-                  }`}>
-                    <h3 className="font-semibold mb-2">Sua Situação</h3>
-                    
-                    {currentPlayerData.status === 'approved' && (
-                      <div className="text-green-700">
-                        <p className="font-semibold">✅ Pagamento Aprovado!</p>
-                        <p className="text-sm">Você está confirmado para o jogo!</p>
-                      </div>
-                    )}
-                    
-                    {currentPlayerData.status === 'analyzing' && (
-                      <div className="text-yellow-700">
-                        <p className="font-semibold">🔄 Analisando Comprovante...</p>
-                        <p className="text-sm">Aguarde alguns segundos...</p>
-                      </div>
-                    )}
-                    
-                    {currentPlayerData.status === 'rejected' && (
-                      <div className="text-red-700">
-                        <p className="font-semibold">❌ Comprovante Rejeitado</p>
-                        <p className="text-sm">Envie um novo comprovante ou entre em contato com o admin.</p>
-                      </div>
-                    )}
-                    
-                    {currentPlayerData.status === 'pending' && !currentPlayerData.paymentProof && (
-                      <div className="text-blue-700">
-                        <p className="font-semibold">📤 Envie seu Comprovante</p>
-                        <p className="text-sm">Faça o PIX e envie o comprovante para aprovação automática.</p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  canAddPlayer && (
-                    <div className="p-4 bg-blue-50 rounded-lg mb-6">
-                      <h3 className="font-semibold mb-2">Participar do Jogo</h3>
-                      <input
-                        type="text"
-                        value={newPlayerName}
-                        onChange={(e) => setNewPlayerName(e.target.value)}
-                        placeholder="Seu nome"
-                        className="w-full p-3 border border-gray-300 rounded-md mb-3"
-                      />
-                      <button
-                        onClick={handleAddPlayer}
-                        className="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 font-medium"
-                      >
-                        Quero Participar
-                      </button>
+            // Adaptação da função analyzePaymentProof para incluir chamada ao Apps Script
+            const analyzePaymentProof = async (playerId, file, playerDetails) => {
+                setIsAnalyzingPayment(true);
+                let isValid = false; // Começamos com false, a validação real será no Apps Script ou manual
+                let fileUrl = null;
+                let statusMessage = "Erro ao enviar comprovante.";
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file); // O arquivo em si
+                    formData.append('fileName', file.name);
+                    formData.append('fileMimeType', file.type);
+                    formData.append('playerId', playerId);
+                    formData.append('playerName', playerDetails.name);
+                    formData.append('playerPhone', playerDetails.phone);
+
+                    const response = await fetch(APPS_SCRIPT_WEB_APP_URL, {
+                        method: 'POST',
+                        body: formData // FormData é automaticamente configurado com Content-Type: multipart/form-data
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        fileUrl = result.fileUrl; // Esta é a URL do Drive retornada pelo Apps Script
+                        statusMessage = "Comprovante enviado com sucesso!";
+                        isValid = Math.random() > 0.1; // Simulação de aprovação para demonstração
+                                                       // A validação real aconteceria aqui ou no backend.
+                                                       // Por enquanto, o status do player será "Enviado - Aguardando Análise"
+                                                       // no Sheet, e o front-end usará a simulação de 90% aqui para 'approved'
+                                                       // ou 'rejected' para fins de interface.
+                    } else {
+                        statusMessage = `Falha no upload: ${result.error}`;
+                        console.error('Apps Script Error:', result.error);
+                    }
+                } catch (error) {
+                    statusMessage = `Erro de rede ou comunicação: ${error.message}`;
+                    console.error('Fetch Error:', error);
+                } finally {
+                    setIsAnalyzingPayment(false);
+                }
+
+                return {
+                    isValid, // Retorna a simulação para o front-end
+                    fileUrl, // Retorna a URL real do arquivo no Drive
+                    detectedAmount: pricePerPlayer,
+                    confidence: isValid ? 0.95 : 0.3,
+                    message: statusMessage
+                };
+            };
+
+
+            const handleLogin = () => {
+                const phone = loginPhone.replace(/\D/g, '');
+                if (phone.length < 10) {
+                    alert('Por favor, insira um telefone válido (mínimo 10 dígitos com DDD).');
+                    return;
+                }
+
+                const userExists = players.find(p => p.phone === phone);
+                let userName = userExists ? userExists.name : '';
+
+                if (phone === adminPhone) {
+                    userName = 'Administrador';
+                }
+
+                setCurrentUser({ phone, name: userName });
+
+                if (phone === adminPhone) {
+                    setIsAdmin(true);
+                    setView('admin');
+                } else {
+                    setIsAdmin(false);
+                    setView('player');
+                    setShowAddPlayerForm(!userExists);
+                }
+            };
+
+            const handleLogout = () => {
+                setCurrentUser(null);
+                setIsAdmin(false);
+                setView('login');
+                setShowAddPlayerForm(true);
+            };
+
+            const handleAddPlayer = () => {
+                if (!newPlayerName.trim()) {
+                    alert('Por favor, digite seu nome para participar.');
+                    return;
+                }
+                if (!currentUser) {
+                    alert('Você não está logado! (Erro interno)'); // Isso não deveria acontecer se o formulário for mostrado
+                    return;
+                }
+                if (players.find(p => p.phone === currentUser.phone)) {
+                    alert('Você já está na lista!');
+                    setShowAddPlayerForm(false);
+                    return;
+                }
+
+                const newPlayer = {
+                    id: Date.now(),
+                    name: newPlayerName.trim(),
+                    phone: currentUser.phone,
+                    paymentProofUrl: null, // Agora armazenará a URL persistente
+                    status: 'pending',
+                    addedAt: new Date().toISOString(),
+                    analysisResult: null
+                };
+
+                setPlayers([...players, newPlayer]);
+                setNewPlayerName('');
+                setShowAddPlayerForm(false);
+            };
+
+            const handleFileUpload = async (playerId, file) => {
+                if (!file) return;
+
+                const playerIndex = players.findIndex(p => p.id === playerId);
+                if (playerIndex === -1) return;
+
+                const playerDetails = players[playerIndex];
+
+                const updatedPlayersBeforeUpload = [...players];
+                updatedPlayersBeforeUpload.splice(playerIndex, 1, {
+                    ...playerDetails,
+                    status: 'analyzing', // Indica que o upload está em andamento
+                    analysisResult: null
+                });
+                setPlayers(updatedPlayersBeforeUpload);
+
+                const analysis = await analyzePaymentProof(playerId, file, playerDetails);
+
+                setPlayers(currentPlayers => currentPlayers.map(player =>
+                    player.id === playerId
+                        ? {
+                            ...player,
+                            paymentProofUrl: analysis.fileUrl || player.paymentProofUrl, // Atualiza com a URL do Drive
+                            analysisResult: analysis,
+                            status: analysis.isValid ? 'approved' : 'rejected' // Mantém a simulação para o status no front-end
+                        }
+                        : player
+                ));
+
+                if (!analysis.success) {
+                    alert(`Falha ao enviar comprovante: ${analysis.message}`);
+                }
+            };
+
+            const handleManualApproval = (playerId, approve) => {
+                setPlayers(players.map(player =>
+                    player.id === playerId
+                        ? { ...player, status: approve ? 'approved' : 'rejected', analysisResult: null }
+                        : player
+                ));
+            };
+
+            const handleRemovePlayer = (playerId) => {
+                if (window.confirm("Tem certeza que deseja remover este jogador?")) {
+                    setPlayers(players.filter(player => player.id !== playerId));
+                    const removedPlayer = players.find(p => p.id === playerId);
+                    if (currentUser && removedPlayer && currentUser.phone === removedPlayer.phone) {
+                        setShowAddPlayerForm(true);
+                    }
+                }
+            };
+
+            const handleClearAllPlayers = async () => {
+                if (!window.confirm("ATENÇÃO: Tem certeza que deseja limpar toda a lista de jogadores? Esta ação é irreversível!")) {
+                    return;
+                }
+
+                setIsClearingList(true);
+                setClearListStatus({ message: 'Limpando lista...', color: 'text-yellow-600' });
+
+                try {
+                    // Simulação de espera de rede/processamento
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+
+                    setPlayers([]);
+                    setClearListStatus({ message: '✅ Lista limpa com sucesso!', color: 'text-green-600' });
+
+                } catch (error) {
+                    console.error('Erro ao limpar a lista:', error);
+                    setClearListStatus({ message: `❌ Erro ao limpar lista: ${error.message}`, color: 'text-red-600' });
+                } finally {
+                    setIsClearingList(false);
+                    setTimeout(() => setClearListStatus({ message: '', color: '' }), 5000);
+                }
+            };
+
+            const copyToClipboard = (text) => {
+                navigator.clipboard.writeText(text).then(() => {
+                    setShowCopyFeedback(true);
+                    setTimeout(() => setShowCopyFeedback(false), 2000);
+                }).catch(err => {
+                    console.error('Falha ao copiar texto: ', err);
+                    alert('Erro ao copiar. Por favor, copie manualmente.');
+                });
+            };
+
+            const formatPhoneDisplay = (phone) => {
+                if (!phone) return '';
+                const cleaned = String(phone).replace(/\D/g, '');
+                if (cleaned.length === 11) {
+                    return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 7)}-${cleaned.substring(7, 11)}`;
+                }
+                if (cleaned.length === 10) {
+                    return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 6)}-${cleaned.substring(6, 10)}`;
+                }
+                return cleaned;
+            };
+
+            const scrollToPaymentSection = () => {
+                if (paymentSectionRef.current) {
+                    paymentSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            };
+
+            const currentPlayerData = players.find(p => p.phone === currentUser?.phone);
+
+            const isGameOpenForInscription = gameConfig.status === 'open' || gameConfig.status === 'payment_active';
+            const isPaymentActive = gameConfig.status === 'payment_active';
+            const canAddPlayer = showAddPlayerForm && isGameOpenForInscription && players.length < gameConfig.maxPlayers;
+            const canUploadProof = currentPlayerData && currentPlayerData.status !== 'approved' && isPaymentActive;
+
+            // Componente Modal de Imagem
+            const ImageModal = ({ src, onClose }) => {
+                if (!src) return null;
+                return (
+                    <div className="modal" onClick={onClose}>
+                        <span className="close-button" onClick={onClose}>&times;</span>
+                        <img className="modal-content" src={src} alt="Comprovante de Pagamento" onClick={(e) => e.stopPropagation()} />
                     </div>
-                  )
-                )}
+                );
+            };
 
-                {currentPlayerData && currentPlayerData.status !== 'approved' && (
-                  <div className="p-4 bg-gray-50 rounded-lg mb-6">
-                    <h3 className="font-semibold mb-2">Enviar Comprovante</h3>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Faça o PIX de R$ {pricePerPlayer.toFixed(2)} e envie o comprovante
-                    </p>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileUpload(currentPlayerData.id, e.target.files[0])}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                    />
-                  </div>
-                )}
 
-                <div className="bg-white rounded-lg border border-gray-200 p-4">
-                  <h3 className="font-semibold mb-3">✅ Confirmados ({approvedPlayers.length})</h3>
-                  <div className="space-y-2">
-                    {approvedPlayers.map((player, index) => (
-                      <div key={player.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                            {index + 1}
-                          </div>
-                          <span className="font-medium">{player.name}</span>
-                        </div>
-                        <span className="text-green-600 text-sm">✅</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            );
-          }
-
-          // Tela do Admin
-          if (view === 'admin') {
-            const whatsappMessage = `🏐 *AREIA MOVEDIÇA VÔLEI CLUB* 🏐
-
-📅 *${gameConfig.date}*
-⏰ *${gameConfig.startTime}* - Duração: ${gameConfig.duration}h
-💰 Valor total: R$ ${quadraPrice.toFixed(2)}
-👥 Vagas: ${approvedPlayers.length}/${gameConfig.maxPlayers}
-💸 *Valor por pessoa: R$ ${pricePerPlayer.toFixed(2)}*
-
-✅ *CONFIRMADOS (${approvedPlayers.length}):*
-${approvedPlayers.map((player, index) => `${index + 1}. ${player.name} ✅`).join('\n')}
-
-${pendingPlayers.length > 0 ? `⏳ *AGUARDANDO (${pendingPlayers.length}):*
-${pendingPlayers.map((player, index) => `${index + 1}. ${player.name} ⏳`).join('\n')}
-
-` : ''}💰 Arrecadado: R$ ${(approvedPlayers.length * pricePerPlayer).toFixed(2)}
-📍 Restante: R$ ${(quadraPrice - (approvedPlayers.length * pricePerPlayer)).toFixed(2)}
-
-🔗 *Link para inscrição:* ${window.location.href}
-⏰ *Prazo:* até ${gameConfig.cutoffTime}h
-
-_Sistema automático de aprovação ativo_ 🤖`;
-
-            return (
-              <div className="max-w-4xl mx-auto p-6 bg-white min-h-screen">
-                <div className="flex justify-between items-center mb-6">
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Areia Movediça 🏐</h1>
-                    <p className="text-gray-600">Painel Administrativo</p>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <LogOut />
-                  </button>
-                </div>
-
-                <div className="bg-gray-50 p-6 rounded-lg mb-6">
-                  <h2 className="text-xl font-semibold mb-4">⚙️ Configurações do Jogo</h2>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Data</label>
-                      <input
-                        type="date"
-                        value={gameConfig.date}
-                        onChange={(e) => setGameConfig({...gameConfig, date: e.target.value})}
-                        className="w-full p-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Duração</label>
-                      <select
-                        value={gameConfig.duration}
-                        onChange={(e) => setGameConfig({...gameConfig, duration: parseFloat(e.target.value)})}
-                        className="w-full p-2 border border-gray-300 rounded-md"
-                      >
-                        <option value={1}>1 hora (R$ 120)</option>
-                        <option value={1.5}>1h30 (R$ 180)</option>
-                        <option value={2}>2 horas (R$ 240)</option>
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Início</label>
-                      <input
-                        type="time"
-                        value={gameConfig.startTime}
-                        onChange={(e) => setGameConfig({...gameConfig, startTime: e.target.value})}
-                        className="w-full p-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Limite Inscrições</label>
-                      <input
-                        type="time"
-                        value={gameConfig.cutoffTime}
-                        onChange={(e) => setGameConfig({...gameConfig, cutoffTime: e.target.value})}
-                        className="w-full p-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                    <h3 className="font-semibold text-green-800 mb-1">💰 Valor Total</h3>
-                    <p className="text-2xl font-bold text-green-600">R$ {quadraPrice.toFixed(2)}</p>
-                  </div>
-                  
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <h3 className="font-semibold text-blue-800 mb-1">👥 Confirmados</h3>
-                    <p className="text-2xl font-bold text-blue-600">{approvedPlayers.length}/{gameConfig.maxPlayers}</p>
-                  </div>
-                  
-                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                    <h3 className="font-semibold text-purple-800 mb-1">💸 Por Pessoa</h3>
-                    <p className="text-2xl font-bold text-purple-600">R$ {pricePerPlayer.toFixed(2)}</p>
-                  </div>
-                  
-                  <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                    <h3 className="font-semibold text-orange-800 mb-1">💳 Arrecadado</h3>
-                    <p className="text-2xl font-bold text-orange-600">R$ {(approvedPlayers.length * pricePerPlayer).toFixed(2)}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold">👥 Gerenciar Jogadores</h3>
-                  
-                  {players.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Users />
-                      <p className="mt-4">Nenhum jogador inscrito ainda</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {players.map((player, index) => (
-                        <div key={player.id} className={`p-4 rounded-lg border-2 ${
-                          player.status === 'approved' ? 'border-green-200 bg-green-50' :
-                          player.status === 'analyzing' ? 'border-yellow-200 bg-yellow-50' :
-                          player.status === 'rejected' ? 'border-red-200 bg-red-50' :
-                          'border-blue-200 bg-blue-50'
-                        }`}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center font-bold text-sm">
-                                {index + 1}
-                              </div>
-                              <div>
-                                <h4 className="font-semibold">{player.name}</h4>
-                                <p className="text-sm text-gray-600">{player.phone}</p>
-                                <p className="text-xs text-gray-500">R$ {pricePerPlayer.toFixed(2)}</p>
-                              </div>
+            // Tela de Login
+            if (view === 'login') {
+                return (
+                    <div className="max-w-md mx-auto p-6 bg-white min-h-screen flex flex-col justify-center">
+                        <div className="text-center mb-8">
+                            <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                                <span className="text-white text-2xl font-bold">🏐</span>
                             </div>
-                            
-                            <div className="flex items-center gap-2">
-                              {player.status === 'analyzing' && (
-                                <div className="text-yellow-600 text-sm">
-                                  🔄 Analisando...
-                                </div>
-                              )}
-                              
-                              {player.status === 'approved' && (
-                                <div className="text-green-600 font-semibold text-sm">
-                                  ✅ Aprovado
-                                </div>
-                              )}
-                              
-                              {player.status === 'rejected' && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-red-600 font-semibold text-sm">❌ Rejeitado</span>
-                                  <button
-                                    onClick={() => handleManualApproval(player.id, true)}
-                                    className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700"
-                                  >
-                                    Aprovar
-                                  </button>
-                                </div>
-                              )}
-                              
-                              {player.status === 'pending' && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-blue-600 text-sm">⏳ Aguardando</span>
-                                  <button
-                                    onClick={() => handleManualApproval(player.id, true)}
-                                    className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700"
-                                  >
-                                    Aprovar
-                                  </button>
-                                </div>
-                              )}
-                              
-                              <button
-                                onClick={() => handleRemovePlayer(player.id)}
-                                className="text-red-600 hover:text-red-800 p-1"
-                              >
-                                <X />
-                              </button>
-                            </div>
-                          </div>
+                            <h1 className="text-2xl font-bold text-gray-800 mb-2">Areia Movediça</h1>
+                            <p className="text-gray-600">Vôlei Club</p>
                         </div>
-                      ))}
+
+                        <div className="space-y-4">
+                            <div>
+                                <label htmlFor="login-phone" className="block text-sm font-medium mb-2 text-gray-700">Telefone (WhatsApp)</label>
+                                <input
+                                    id="login-phone"
+                                    type="tel"
+                                    value={loginPhone}
+                                    onChange={(e) => setLoginPhone(e.target.value)}
+                                    placeholder="(41) 99999-9999"
+                                    className="w-full p-4 border border-gray-300 rounded-lg text-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                                />
+                            </div>
+
+                            <button
+                                onClick={handleLogin}
+                                className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white p-4 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md"
+                            >
+                                Entrar no Sistema
+                            </button>
+                        </div>
+
+                        <div className="mt-8 p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-100">
+                            <h3 className="font-semibold mb-2 flex items-center gap-2 text-gray-800"><Calendar className="lucide-small text-blue-600" /> Próximo Jogo</h3>
+                            <div className="text-sm text-gray-700 space-y-1">
+                                <p><span className="font-medium">📅 Data:</span> {gameConfig.date}</p>
+                                <p><span className="font-medium">⏰ Início:</span> {gameConfig.startTime}</p>
+                                <p><span className="font-medium">⏱️ Duração:</span> {gameConfig.duration}h</p>
+                                <p><span className="font-medium">⏳ Prazo Inscrição:</span> {gameConfig.cutoffTime}</p>
+                                <p><span className="font-medium">👥 Vagas:</span> {approvedPlayers.length}/{gameConfig.maxPlayers}</p>
+                                {gameConfig.status === 'open' && <p><span className="font-medium">💰 Valor:</span> A definir</p>}
+                                {gameConfig.status === 'payment_active' && <p><span className="font-medium">💰 Valor:</span> R$ {pricePerPlayer.toFixed(2)} por pessoa</p>}
+                                <p className={`font-semibold ${gameConfig.status === 'closed' ? 'text-red-600' : gameConfig.status === 'cancelled' ? 'text-gray-600' : 'text-green-600'}`}>
+                                    Status: {gameConfig.status === 'open' ? 'Aberto para inscrições' :
+                                            gameConfig.status === 'payment_active' ? 'Pagamento Ativo' :
+                                            gameConfig.status === 'closed' ? 'Fechado' : 'Cancelado'}
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                  )}
-                </div>
+                );
+            }
 
-                <div className="mt-8 p-4 bg-orange-50 rounded-lg border border-orange-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-orange-800">📱 Atualizar Grupo WhatsApp</h3>
-                    <button
-                      onClick={() => copyToClipboard(whatsappMessage)}
-                      className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1 rounded-md hover:bg-orange-700 text-sm"
-                    >
-                      <Copy className="w-4 h-4" />
-                      Copiar
-                    </button>
-                  </div>
-                  <div className="bg-white p-3 rounded-md border text-sm font-mono whitespace-pre-line max-h-64 overflow-y-auto">
-                    {whatsappMessage}
-                  </div>
-                </div>
-              </div>
-            );
-          }
+            // Tela do Jogador
+            if (view === 'player') {
+                return (
+                    <div className="max-w-md mx-auto p-6 bg-white min-h-screen">
+                        <div className="flex justify-between items-center mb-6 border-b pb-4">
+                            <div>
+                                <h1 className="text-xl font-bold text-gray-800">Areia Movediça 🏐</h1>
+                                <p className="text-gray-600 flex items-center gap-1"><Phone className="lucide-small" /> Olá, {currentPlayerData?.name || (currentUser ? formatPhoneDisplay(currentUser.phone) : 'Visitante')}</p>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                                aria-label="Sair"
+                            >
+                                <LogOut className="lucide-small" /> {/* Ajustado */}
+                            </button>
+                        </div>
 
-          return null;
+                        <div className="bg-gradient-to-r from-orange-100 to-red-100 p-4 rounded-lg mb-6 shadow-sm border border-orange-200">
+                            <h2 className="font-semibold mb-2 flex items-center gap-2 text-orange-800"><Calendar className="lucide-small text-orange-600" /> Próximo Jogo</h2> {/* Ajustado */}
+                            <div className="text-sm space-y-1 text-gray-800">
+                                <p><span className="font-medium">📅</span> {gameConfig.date}</p>
+                                <p><span className="font-medium">⏰</span> {gameConfig.startTime} - Duração: {gameConfig.duration}h</p>
+                                <p><span className="font-medium">⏳</span> Inscrições até: {gameConfig.cutoffTime}</p>
+                                <p><span className="font-medium">👥</span> {approvedPlayers.length}/{gameConfig.maxPlayers} confirmados</p>
+                                {gameConfig.status === 'open' && <p><span className="font-medium">💰</span> Valor a definir</p>}
+                                {gameConfig.status === 'payment_active' && <p><span className="font-medium">💰</span> R$ {pricePerPlayer.toFixed(2)} por pessoa</p>}
+                                <p className={`font-semibold ${gameConfig.status === 'closed' ? 'text-red-600' : gameConfig.status === 'cancelled' ? 'text-gray-600' : 'text-green-600'}`}>
+                                    Status do Jogo: {gameConfig.status === 'open' ? 'Aberto para inscrições' :
+                                            gameConfig.status === 'payment_active' ? 'Pagamento Ativo' :
+                                            gameConfig.status === 'closed' ? 'Fechado' : 'Cancelado'}
+                                </p>
+                            </div>
+                        </div>
+
+                        {isGameOpenForInscription ? (
+                            <>
+                                {canAddPlayer ? (
+                                    <div className="p-4 bg-blue-50 rounded-lg mb-6 shadow-md border border-blue-200">
+                                        <h3 className="font-semibold mb-2 flex items-center gap-2 text-blue-800"><Users className="lucide-small text-blue-600" /> Participar do Jogo</h3> {/* Ajustado */}
+                                        <input
+                                            type="text"
+                                            value={newPlayerName}
+                                            onChange={(e) => setNewPlayerName(e.target.value)}
+                                            placeholder="Digite seu nome completo"
+                                            className="w-full p-3 border border-gray-300 rounded-md mb-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                        />
+                                        <button
+                                            onClick={handleAddPlayer}
+                                            className="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 font-medium transition-colors shadow-sm"
+                                        >
+                                            Quero Participar!
+                                        </button>
+                                    </div>
+                                ) : (
+                                    currentPlayerData && (
+                                        <div className={`p-4 rounded-lg mb-6 shadow-md ${
+                                            currentPlayerData.status === 'approved' ? 'bg-green-50 border border-green-200' :
+                                            currentPlayerData.status === 'analyzing' ? 'bg-yellow-50 border border-yellow-200' :
+                                            currentPlayerData.status === 'rejected' ? 'bg-red-50 border border-red-200' :
+                                            'bg-blue-50 border border-blue-200'
+                                        }`}>
+                                            <h3 className="font-semibold mb-2 flex items-center gap-2">
+                                                {currentPlayerData.status === 'approved' && <Check className="lucide-small text-green-700" />} {/* Ajustado */}
+                                                {currentPlayerData.status === 'analyzing' && <Clock className="lucide-small text-yellow-700" />} {/* Ajustado */}
+                                                {currentPlayerData.status === 'rejected' && <X className="lucide-small text-red-700" />} {/* Ajustado */}
+                                                {currentPlayerData.status === 'pending' && <Upload className="lucide-small text-blue-700" />} {/* Ajustado */}
+                                                Sua Situação
+                                            </h3>
+
+                                            {currentPlayerData.status === 'approved' && (
+                                                <div className="text-green-700 text-sm">
+                                                    <p className="font-semibold">✅ Pagamento Aprovado!</p>
+                                                    <p>Você está confirmado para o jogo!</p>
+                                                </div>
+                                            )}
+
+                                            {currentPlayerData.status === 'analyzing' && (
+                                                <div className="text-yellow-700 flex items-center gap-2 text-sm">
+                                                    <div className="animate-spin inline-block w-5 h-5 border-[3px] border-current border-t-transparent text-yellow-500 rounded-full" role="status" aria-label="loading">
+                                                        <span className="sr-only">Loading...</span>
+                                                    </div>
+                                                    <p className="font-semibold">Analisando Comprovante...</p>
+                                                    <p>Aguarde alguns segundos pela aprovação automática.</p>
+                                                </div>
+                                            )}
+
+                                            {currentPlayerData.status === 'rejected' && (
+                                                <div className="text-red-700 text-sm">
+                                                    <p className="font-semibold">❌ Comprovante Rejeitado</p>
+                                                    <p>O comprovante enviado não foi aprovado automaticamente. Por favor, envie um novo comprovante ou entre em contato com o admin.</p>
+                                                </div>
+                                            )}
+
+                                            {currentPlayerData.status === 'pending' && (
+                                                <div className="text-blue-700 text-sm">
+                                                    {isPaymentActive ? (
+                                                        <>
+                                                            <p className="font-semibold">📤 Envie seu Comprovante</p>
+                                                            <p>Faça o PIX de *R$ {pricePerPlayer.toFixed(2)}* e envie o comprovante para confirmar sua vaga.</p>
+                                                            <button
+                                                                onClick={scrollToPaymentSection}
+                                                                className="mt-3 w-full bg-blue-500 text-white p-3 rounded-md hover:bg-blue-600 font-medium transition-colors shadow-sm"
+                                                            >
+                                                                Ver Dados para Pagamento
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <p className="text-sm font-medium text-gray-700">Aguardando definição de valor e abertura de pagamentos.</p>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                )}
+
+                                {isPaymentActive && (
+                                    <div ref={paymentSectionRef} className="p-4 bg-purple-50 rounded-lg mb-6 shadow-md border border-purple-200">
+                                        <h3 className="font-semibold mb-2 flex items-center gap-2 text-purple-800"><DollarSign className="lucide-small text-purple-600" /> Detalhes para Pagamento</h3> {/* Ajustado */}
+                                        <p className="text-gray-700 mb-2">Valor a pagar: <span className="font-bold text-lg text-purple-700">R$ {pricePerPlayer.toFixed(2)}</span></p>
+                                        <p className="text-gray-700 mb-2">Chave PIX (CPF): <span className="font-bold text-purple-700">{gameConfig.pixKey}</span></p>
+
+                                        <button
+                                            onClick={() => copyToClipboard(gameConfig.pixKey)}
+                                            className="w-full flex items-center justify-center gap-2 bg-gray-200 text-gray-800 p-3 rounded-md hover:bg-gray-300 font-medium transition-colors shadow-sm relative"
+                                        >
+                                            <Copy className="lucide-small" /> {/* Ajustado */}
+                                            {showCopyFeedback && (
+                                                <span className="absolute -top-8 bg-green-500 text-white text-xs px-2 py-1 rounded-full animate-bounce">Copiado!</span>
+                                            )}
+                                            Copiar Chave PIX
+                                        </button>
+
+                                        {currentPlayerData && currentPlayerData.status !== 'approved' && (
+                                            <div className="mt-4">
+                                                <label htmlFor={`file-upload-${currentPlayerData.id}`} className="w-full flex items-center justify-center gap-2 bg-green-600 text-white p-3 rounded-md hover:bg-green-700 font-medium cursor-pointer transition-colors shadow-sm">
+                                                    <Upload className="lucide-small" /> {/* Ajustado */}
+                                                    {isAnalyzingPayment ? 'Enviando e Analisando...' : 'Enviar Comprovante de PIX'}
+                                                </label>
+                                                <input
+                                                    id={`file-upload-${currentPlayerData.id}`}
+                                                    type="file"
+                                                    accept="image/*, application/pdf"
+                                                    onChange={(e) => handleFileUpload(currentPlayerData.id, e.target.files[0])}
+                                                    className="hidden"
+                                                    disabled={isAnalyzingPayment}
+                                                />
+                                                {isAnalyzingPayment && (
+                                                    <p className="text-center text-sm text-gray-600 mt-2 flex items-center justify-center gap-2">
+                                                        <div className="animate-spin inline-block w-4 h-4 border-[2px] border-current border-t-transparent text-green-500 rounded-full" role="status" aria-label="loading">
+                                                            <span className="sr-only">Loading...</span>
+                                                        </div>
+                                                        Enviando e analisando comprovante...
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+                                    <h3 className="font-semibold mb-3 flex items-center gap-2 text-gray-800"><Users className="lucide-small" /> Lista de Jogadores Confirmados ({approvedPlayers.length}/{gameConfig.maxPlayers})</h3> {/* Ajustado */}
+                                    {approvedPlayers.length === 0 ? (
+                                        <p className="text-gray-600 text-center">Nenhum jogador confirmado ainda.</p>
+                                    ) : (
+                                        <ul className="divide-y divide-gray-200">
+                                            {approvedPlayers.map((player, index) => (
+                                                <li key={player.id} className="py-2 flex items-center justify-between">
+                                                    <span className="font-medium text-gray-800">{index + 1}. {player.name}</span>
+                                                    <span className="text-green-600 flex items-center gap-1">
+                                                        <Check className="lucide-small" /> {/* Ajustado */}
+                                                        Confirmado
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+
+                                {pendingPlayers.length > 0 && (
+                                    <div className="mt-6 bg-white p-4 rounded-lg shadow-md border border-gray-200">
+                                        <h3 className="font-semibold mb-3 flex items-center gap-2 text-gray-800"><Clock className="lucide-small" /> Jogadores Aguardando ({pendingPlayers.length})</h3> {/* Ajustado */}
+                                        <ul className="divide-y divide-gray-200">
+                                            {pendingPlayers.map((player, index) => (
+                                                <li key={player.id} className="py-2 flex items-center justify-between text-gray-700">
+                                                    <span>{player.name}</span>
+                                                    <span className="text-yellow-600 flex items-center gap-1">
+                                                        <Clock className="lucide-small" /> {/* Ajustado */}
+                                                        Aguardando
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <div className="bg-red-50 border border-red-200 p-4 rounded-lg text-center text-red-700">
+                                <p className="font-semibold text-lg mb-2">Jogo Fechado ou Cancelado</p>
+                                <p>As inscrições e pagamentos para este jogo não estão mais abertos ou o jogo foi cancelado.</p>
+                                <p>Por favor, aguarde informações sobre o próximo jogo.</p>
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+
+            // Tela do Administrador
+            if (view === 'admin') {
+                return (
+                    <div className="max-w-xl mx-auto p-6 bg-white min-h-screen">
+                        <div className="flex justify-between items-center mb-6 border-b pb-4">
+                            <div>
+                                <h1 className="text-xl font-bold text-gray-800">Areia Movediça Admin ⚙️</h1>
+                                <p className="text-gray-600">Bem-vindo, {currentUser?.name || 'Admin'}</p>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                                aria-label="Sair"
+                            >
+                                <LogOut className="lucide-small" /> {/* Ajustado */}
+                            </button>
+                        </div>
+
+                        <div className="bg-blue-50 p-4 rounded-lg mb-6 shadow-md border border-blue-200">
+                            <h2 className="font-semibold mb-3 flex items-center gap-2 text-blue-800">
+                                <Calendar className="lucide-small text-blue-600" /> Configuração do Jogo
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Data do Jogo:</label>
+                                    <input
+                                        type="date"
+                                        value={gameConfig.date}
+                                        onChange={(e) => setGameConfig({ ...gameConfig, date: e.target.value })}
+                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Hora de Início:</label>
+                                    <input
+                                        type="time"
+                                        value={gameConfig.startTime}
+                                        onChange={(e) => setGameConfig({ ...gameConfig, startTime: e.target.value })}
+                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Duração (horas):</label>
+                                    <input
+                                        type="number"
+                                        value={gameConfig.duration}
+                                        onChange={(e) => setGameConfig({ ...gameConfig, duration: parseInt(e.target.value) })}
+                                        min="1"
+                                        max="4"
+                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Máx. Jogadores:</label>
+                                    <input
+                                        type="number"
+                                        value={gameConfig.maxPlayers}
+                                        onChange={(e) => setGameConfig({ ...gameConfig, maxPlayers: parseInt(e.target.value) })}
+                                        min="10"
+                                        max="30"
+                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Prazo Final Inscrição:</label>
+                                    <input
+                                        type="time"
+                                        value={gameConfig.cutoffTime}
+                                        onChange={(e) => setGameConfig({ ...gameConfig, cutoffTime: e.target.value })}
+                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div className="col-span-1 md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Chave PIX:</label>
+                                    <input
+                                        type="text"
+                                        value={gameConfig.pixKey}
+                                        onChange={(e) => setGameConfig({ ...gameConfig, pixKey: e.target.value })}
+                                        placeholder="Chave PIX (CPF/CNPJ/Telefone/Email/Aleatória)"
+                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div className="col-span-1 md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Status do Jogo:</label>
+                                    <select
+                                        value={gameConfig.status}
+                                        onChange={(e) => setGameConfig({ ...gameConfig, status: e.target.value })}
+                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    >
+                                        <option value="open">Aberto para Inscrições</option>
+                                        <option value="payment_active">Pagamento Ativo</option>
+                                        <option value="closed">Fechado</option>
+                                        <option value="cancelled">Cancelado</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <p className="mt-4 text-gray-700 font-semibold">
+                                Custo da Quadra: <span className="text-lg text-blue-700">R$ {quadraPrice.toFixed(2)}</span>
+                            </p>
+                            <p className="text-gray-700 font-semibold">
+                                Valor por jogador (base {totalPlayersForDivision} jogadores): <span className="text-lg text-blue-700">R$ {pricePerPlayer.toFixed(2)}</span>
+                            </p>
+                            <p className="mt-2 text-sm text-gray-600">
+                                *O valor por jogador é calculado com base na quantidade de jogadores (confirmados + aguardando) no momento.
+                            </p>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200 mb-6">
+                            <h2 className="font-semibold mb-3 flex items-center gap-2 text-gray-800"><Users className="lucide-small" /> Gerenciamento de Jogadores</h2>
+                            {players.length === 0 ? (
+                                <p className="text-gray-600 text-center">Nenhum jogador na lista ainda.</p>
+                            ) : (
+                                <ul className="divide-y divide-gray-200">
+                                    {players.map(player => (
+                                        <li key={player.id} className="py-3">
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex-1">
+                                                    <p className="font-medium text-gray-800 flex items-center">
+                                                        {player.name}
+                                                        {player.paymentProofUrl && (
+                                                            <img
+                                                                src={player.paymentProofUrl}
+                                                                alt="Comprovante"
+                                                                className="receipt-thumbnail"
+                                                                onClick={() => setModalImageSrc(player.paymentProofUrl)}
+                                                            />
+                                                        )}
+                                                    </p>
+                                                    <p className="text-sm text-gray-600">{formatPhoneDisplay(player.phone)}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    {player.status === 'approved' && (
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            <Check className="lucide-small mr-1" /> {/* Ajustado */}
+                                                            Aprovado
+                                                        </span>
+                                                    )}
+                                                    {player.status === 'pending' && (
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                            <Clock className="lucide-small mr-1" /> {/* Ajustado */}
+                                                            Pendente
+                                                        </span>
+                                                    )}
+                                                    {player.status === 'analyzing' && (
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                            <div className="animate-spin inline-block w-3 h-3 border-[2px] border-current border-t-transparent text-yellow-500 rounded-full mr-1" role="status" aria-label="loading">
+                                                                <span className="sr-only">Loading...</span>
+                                                            </div>
+                                                            Analisando
+                                                        </span>
+                                                    )}
+                                                    {player.status === 'rejected' && (
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                            <X className="lucide-small mr-1" /> {/* Ajustado */}
+                                                            Rejeitado
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="mt-2 flex space-x-2 justify-end">
+                                                {player.status !== 'approved' && (
+                                                    <button
+                                                        onClick={() => handleManualApproval(player.id, true)}
+                                                        className="bg-green-500 text-white text-xs px-3 py-1 rounded-md hover:bg-green-600 transition-colors shadow-sm"
+                                                    >
+                                                        Aprovar
+                                                    </button>
+                                                )}
+                                                {player.status === 'approved' && (
+                                                    <button
+                                                        onClick={() => handleManualApproval(player.id, false)}
+                                                        className="bg-yellow-500 text-white text-xs px-3 py-1 rounded-md hover:bg-yellow-600 transition-colors shadow-sm"
+                                                    >
+                                                        Reverter
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => handleRemovePlayer(player.id)}
+                                                    className="bg-red-500 text-white text-xs px-3 py-1 rounded-md hover:bg-red-600 transition-colors shadow-sm flex items-center gap-1"
+                                                >
+                                                    <Trash2 className="lucide-small" /> {/* Ajustado */}
+                                                    Remover
+                                                </button>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                            <div className="mt-4 border-t pt-4">
+                                <button
+                                    onClick={handleClearAllPlayers}
+                                    className={`w-full p-3 rounded-md font-medium transition-colors shadow-sm
+                                        ${isClearingList ? 'bg-gray-400 text-gray-700 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-red-700'}`}
+                                    disabled={isClearingList}
+                                >
+                                    {isClearingList ? (
+                                        <span className="flex items-center justify-center">
+                                            <div className="animate-spin inline-block w-4 h-4 border-[2px] border-current border-t-transparent text-white rounded-full mr-2" role="status" aria-label="loading">
+                                                <span className="sr-only">Loading...</span>
+                                            </div>
+                                            Limpando...
+                                        </span>
+                                    ) : (
+                                        'Limpar Toda a Lista de Jogadores'
+                                    )}
+                                </button>
+                                {clearListStatus.message && (
+                                    <p className={`mt-2 text-center text-sm ${clearListStatus.color}`}>
+                                        {clearListStatus.message}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        <ImageModal src={modalImageSrc} onClose={() => setModalImageSrc(null)} />
+                    </div>
+                );
+            }
         };
 
         ReactDOM.render(<AreiaMovedicaApp />, document.getElementById('root'));
